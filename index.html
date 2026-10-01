@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspector Check - Verificación Vehicular</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        inspection: {
+                            yellow: '#f59e0b',
+                            green: '#10b981',
+                            red: '#ef4444',
+                            blue: '#2563eb'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Animación de escaneo para la cámara */
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 90%; }
+            100% { top: 0%; }
+        }
+        .scan-line {
+            animation: scan 2s infinite ease-in-out;
+        }
+        
+        /* Ocultar barra de desplazamiento en pestañas */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Estilo para las patentes tipo MERCOSUR / Argentina */
+        .plate-style {
+            background: linear-gradient(180deg, #1d4ed8 25%, #ffffff 25%);
+            border: 3px solid #1e293b;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-20 md:pb-0">
+
+    <!-- Header principal para inspector -->
+    <header class="bg-navy-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-inspection-yellow text-navy-900 font-extrabold p-2 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-none tracking-wide text-white">INSPECTOR<span class="text-inspection-yellow">CHECK</span></h1>
+                    <p class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> Control de Tránsito v2.4</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span id="badge-online" class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-semibold border border-emerald-500/30 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> BBDD Activa
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto w-full flex-grow p-4 space-y-4">
+
+        <!-- NAVEGACIÓN PRINCIPAL (PESTAÑAS) -->
+        <div class="bg-white rounded-xl shadow-sm p-1.5 flex border border-slate-200">
+            <button onclick="switchTab('search')" id="tab-btn-search" class="flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all bg-navy-900 text-white shadow">
+                <i class="fa-solid fa-magnifying-glass"></i> Consultar Patente
+            </button>
+            <button onclick="switchTab('database')" id="tab-btn-database" class="flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+                <i class="fa-solid fa-database"></i> Base de Datos
+            </button>
+            <button onclick="switchTab('history')" id="tab-btn-history" class="flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
+                <i class="fa-solid fa-clock-rotate-left"></i> Historial
+            </button>
+        </div>
+
+        <!-- ==================== PESTAÑA 1: BÚSQUEDA Y CAPTURA ==================== -->
+        <section id="tab-search" class="space-y-4">
+            
+            <!-- TARJETA DE BÚSQUEDA Y CÁMARA -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-base font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-car text-navy-800"></i> Búsqueda por Dominio / Patente
+                </h2>
+
+                <!-- Input manual -->
+                <div class="space-y-2">
+                    <div class="relative">
+                        <input type="text" id="plate-input" placeholder="Ej: AA123CD o ABC123" uppercase 
+                            class="w-full pl-11 pr-24 py-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl font-mono text-xl font-extrabold uppercase tracking-widest text-slate-900 focus:bg-white focus:border-navy-800 focus:outline-none transition-all placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:tracking-normal">
+                        <i class="fa-solid fa-id-card absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                        <button onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button onclick="triggerCamera()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all text-sm">
+                        <i class="fa-solid fa-camera text-lg"></i> Tomar Foto / OCR
+                    </button>
+                    <button onclick="searchPlate()" class="bg-navy-900 hover:bg-navy-800 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all text-sm">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i> Buscar en BBDD
+                    </button>
+                </div>
+
+                <!-- Input oculto para cargar imágenes -->
+                <input type="file" id="camera-file-input" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(event)">
+            </div>
+
+            <!-- MODAL / VISOR SIMULADO DE CÁMARA Y ESCANEO OCR -->
+            <div id="ocr-modal" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl space-y-4">
+                    <div class="bg-navy-900 p-4 text-white flex justify-between items-center">
+                        <span class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-expand text-inspection-yellow animate-pulse"></i> Escaneando Patente (OCR)</span>
+                        <button onclick="closeOcrModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    
+                    <div class="p-4 space-y-4">
+                        <div class="relative w-full h-56 bg-slate-800 rounded-xl overflow-hidden border-2 border-slate-600 flex items-center justify-center">
+                            <!-- Previsualización de Imagen -->
+                            <img id="ocr-preview-img" src="" class="w-full h-full object-cover hidden" alt="Vista previa foto">
+                            
+                            <!-- Placeholder si no hay imagen real -->
+                            <div id="ocr-placeholder-box" class="text-center p-4 text-slate-400">
+                                <i class="fa-solid fa-car-rear text-5xl mb-2 text-slate-500"></i>
+                                <p class="text-xs">Procesando imagen capturada...</p>
+                            </div>
+
+                            <!-- Animación del Visor de Escaneo -->
+                            <div class="absolute inset-0 border-2 border-dashed border-inspection-yellow/50 m-4 rounded-lg pointer-events-none flex items-center justify-center">
+                                <div class="w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent absolute scan-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- Estado del Procesamiento OCR -->
+                        <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-navy-900 text-white flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-microchip animate-spin text-inspection-yellow" id="ocr-spinner"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <div class="text-xs text-slate-500 font-bold uppercase" id="ocr-status-title">Analizando Caracteres...</div>
+                                <div class="text-sm font-extrabold text-navy-900 font-mono" id="ocr-detected-text">Leyendo matrícula...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                        <button onclick="closeOcrModal()" class="px-4 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg text-sm">Cancelar</button>
+                        <button id="ocr-confirm-btn" onclick="confirmOcrResult()" disabled class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm disabled:opacity-50 transition-all">
+                            Confirmar Búsqueda
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESULTADOS DE LA BÚSQUEDA -->
+            <div id="search-result-container" class="hidden">
+                <!-- Se llena dinámicamente con JS -->
+            </div>
+
+            <!-- MAPA INTERACTIVO DEL DOMICILIO -->
+            <div id="map-section" class="hidden bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-indigo-600"></i> Domicilio Registrado en Mapa
+                    </h3>
+                    <span id="map-address-label" class="text-xs font-semibold text-slate-500">Calle Ejemplo 123</span>
+                </div>
+                <div id="leaflet-map" class="w-full h-64 rounded-xl border border-slate-200 z-10"></div>
+            </div>
+
+        </section>
+
+        <!-- ==================== PESTAÑA 2: GESTIÓN DE BASE DE DATOS ==================== -->
+        <section id="tab-database" class="hidden space-y-4">
+            
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-navy-900">Base de Datos de Vehículos</h2>
+                    <p class="text-xs text-slate-500">Administra, edita y añade registros almacenados localmente.</p>
+                </div>
+                <button onclick="openVehicleModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all">
+                    <i class="fa-solid fa-plus"></i> Nuevo Registro
+                </button>
+            </div>
+
+            <!-- Lista de Patentes -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <div class="relative flex-grow max-w-xs">
+                        <input type="text" id="db-search-input" onkeyup="filterDatabase()" placeholder="Filtrar por patente o titular..." class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-navy-800">
+                        <i class="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    </div>
+                    <span id="db-counter" class="text-xs font-bold text-slate-500">0 Registros</span>
+                </div>
+
+                <div class="divide-y divide-slate-100 max-h-[500px] overflow-y-auto no-scrollbar" id="db-list-container">
+                    <!-- Se renderizan los registros aquí -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PESTAÑA 3: HISTORIAL DE INSPECCIONES ==================== -->
+        <section id="tab-history" class="hidden space-y-4">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-navy-900">Historial de Consultas</h2>
+                    <p class="text-xs text-slate-500">Registro de inspecciones realizadas en este dispositivo.</p>
+                </div>
+                <button onclick="clearHistory()" class="text-xs font-bold text-red-600 hover:text-red-700 px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Borrar Historial
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="divide-y divide-slate-100 max-h-[500px] overflow-y-auto no-scrollbar" id="history-list-container">
+                    <!-- Se renderiza el historial aquí -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL CREAR / EDITAR VEHÍCULO -->
+    <div id="vehicle-modal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-navy-900 p-4 text-white flex justify-between items-center">
+                <h3 id="modal-vehicle-title" class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-car-tunnel text-inspection-yellow"></i> Registrar Vehículo
+                </h3>
+                <button onclick="closeVehicleModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <form id="vehicle-form" onsubmit="saveVehicleForm(event)" class="p-5 overflow-y-auto space-y-4 flex-grow text-xs sm:text-sm">
+                <input type="hidden" id="form-original-plate">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block font-bold text-slate-700 mb-1">Patente / Dominio *</label>
+                        <input type="text" id="form-plate" required placeholder="Ej: AB123CD" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold uppercase focus:border-navy-900 focus:outline-none">
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block font-bold text-slate-700 mb-1">Estado de Habilitación *</label>
+                        <select id="form-status" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold focus:border-navy-900 focus:outline-none">
+                            <option value="ok">Al Día / Habilitado</option>
+                            <option value="debt">Con Deuda de Patente</option>
+                            <option value="vtv_expired">VTV / RTO Vencida</option>
+                            <option value="alert">Pedido de Captura / Irregular</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr class="border-slate-200">
+
+                <!-- DATOS DEL TITULAR -->
+                <div class="space-y-3">
+                    <h4 class="font-extrabold text-navy-900 text-xs uppercase tracking-wider">Datos del Titular</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="block font-semibold text-slate-600 mb-1">Nombre Completo *</label>
+                            <input type="text" id="form-owner" required placeholder="Ej: Juan Pérez" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="block font-semibold text-slate-600 mb-1">DNI / CUIT *</label>
+                            <input type="text" id="form-dni" required placeholder="Ej: 30-12345678-9" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-slate-200">
+
+                <!-- DATOS DEL DOMICILIO -->
+                <div class="space-y-3">
+                    <h4 class="font-extrabold text-navy-900 text-xs uppercase tracking-wider">Domicilio Registrado</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-2">
+                            <label class="block font-semibold text-slate-600 mb-1">Calle *</label>
+                            <input type="text" id="form-street" required placeholder="Ej: Av. San Martín" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Número *</label>
+                            <input type="text" id="form-number" required placeholder="1234" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Barrio / Depto</label>
+                            <input type="text" id="form-neighborhood" placeholder="Centro" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Localidad *</label>
+                            <input type="text" id="form-city" required placeholder="Córdoba" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Provincia *</label>
+                            <input type="text" id="form-province" required placeholder="Córdoba" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Código Postal</label>
+                            <input type="text" id="form-cp" placeholder="X5000" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Coordenadas opcionales para el mapa -->
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Latitud (Opcional)</label>
+                            <input type="number" step="any" id="form-lat" placeholder="-31.4135" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Longitud (Opcional)</label>
+                            <input type="number" step="any" id="form-lng" placeholder="-64.1810" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-slate-200">
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Observaciones / Notas del Inspector</label>
+                    <textarea id="form-notes" rows="2" placeholder="Observaciones adicionales..." class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeVehicleModal()" class="px-4 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl text-sm">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-xl text-sm shadow-md">Guardar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ==================== BASE DE DATOS INICIAL DE EJEMPLO ====================
+        const initialDatabase = [
+            {
+                plate: "AA123CD",
+                owner: "Carlos Alberto Rodríguez",
+                dni: "20-28493021-7",
+                street: "Av. Colón",
+                number: "1450",
+                neighborhood: "Alberdi",
+                city: "Córdoba",
+                province: "Córdoba",
+                cp: "X5000",
+                status: "ok",
+                lat: -31.4102,
+                lng: -64.2005,
+                notes: "Vehículo con VTV vigente hasta Nov/2027. Sin deudas registradas."
+            },
+            {
+                plate: "AB456EF",
+                owner: "María Eugenia Gómez",
+                dni: "27-32109845-4",
+                street: "Calle General Paz",
+                number: "380",
+                neighborhood: "Centro",
+                city: "San Francisco",
+                province: "Córdoba",
+                cp: "X2400",
+                status: "vtv_expired",
+                lat: -31.4278,
+                lng: -62.0827,
+                notes: "VTV vencida en el último control de Julio. Notificación emitida."
+            },
+            {
+                plate: "ABC123",
+                owner: "Empresa Logística del Norte S.A.",
+                dni: "30-71829384-2",
+                street: "Ruta Nacional 9 Km",
+                number: "680",
+                neighborhood: "Parque Industrial",
+                city: "Rosario",
+                province: "Santa Fe",
+                cp: "S2000",
+                status: "debt",
+                lat: -32.9587,
+                lng: -60.6930,
+                notes: "Registra multa de velocidad en acceso norte y deuda impositiva."
+            },
+            {
+                plate: "XYZ789",
+                owner: "Jorge Luis Fernández",
+                dni: "20-17849201-3",
+                street: "Av. Belgrano",
+                number: "2100",
+                neighborhood: "Monserrat",
+                city: "Buenos Aires",
+                province: "CABA",
+                cp: "C1092",
+                status: "alert",
+                lat: -34.6131,
+                lng: -58.3881,
+                notes: "¡ATENCIÓN! Pedido de secuestro por falta de transferencia."
+            }
+        ];
+
+        // Global States
+        let database = [];
+        let historyLogs = [];
+        let mapInstance = null;
+        let mapMarker = null;
+        let detectedOcrPlate = "";
+
+        // Initial Load
+        window.onload = function() {
+            loadDataFromStorage();
+            renderDatabaseList();
+            renderHistoryList();
+        }
+
+        // ==================== LOCAL STORAGE LOGIC ====================
+        function loadDataFromStorage() {
+            const storedDb = localStorage.getItem('inspector_db');
+            if (storedDb) {
+                database = JSON.parse(storedDb);
+            } else {
+                database = [...initialDatabase];
+                saveDbToStorage();
+            }
+
+            const storedHistory = localStorage.getItem('inspector_history');
+            if (storedHistory) {
+                historyLogs = JSON.parse(storedHistory);
+            }
+        }
+
+        function saveDbToStorage() {
+            localStorage.setItem('inspector_db', JSON.stringify(database));
+            renderDatabaseList();
+        }
+
+        function saveHistoryToStorage() {
+            localStorage.setItem('inspector_history', JSON.stringify(historyLogs));
+            renderHistoryList();
+        }
+
+        // ==================== TAB NAVIGATION ====================
+        function switchTab(tabName) {
+            document.getElementById('tab-search').classList.add('hidden');
+            document.getElementById('tab-database').classList.add('hidden');
+            document.getElementById('tab-history').classList.add('hidden');
+
+            const btnSearch = document.getElementById('tab-btn-search');
+            const btnDb = document.getElementById('tab-btn-database');
+            const btnHist = document.getElementById('tab-btn-history');
+
+            const activeClasses = "bg-navy-900 text-white shadow";
+            const inactiveClasses = "text-slate-600 hover:bg-slate-100";
+
+            btnSearch.className = `flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${inactiveClasses}`;
+            btnDb.className = `flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${inactiveClasses}`;
+            btnHist.className = `flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${inactiveClasses}`;
+
+            if (tabName === 'search') {
+                document.getElementById('tab-search').classList.remove('hidden');
+                btnSearch.className = `flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeClasses}`;
+            } else if (tabName === 'database') {
+                document.getElementById('tab-database').classList.remove('hidden');
+                btnDb.className = `flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeClasses}`;
+            } else if (tabName === 'history') {
+                document.getElementById('tab-history').classList.remove('hidden');
+                btnHist.className = `flex-1 py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeClasses}`;
+            }
+        }
+
+        // ==================== SEARCH & RESULT LOGIC ====================
+        function searchPlate(manualPlate = null) {
+            const input = document.getElementById('plate-input');
+            const query = (manualPlate || input.value).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            if (!query) {
+                alert("Por favor ingrese o escanee una patente para consultar.");
+                return;
+            }
+
+            input.value = query;
+
+            // Search in local database
+            const foundRecord = database.find(item => item.plate.replace(/[^A-Z0-9]/g, '') === query);
+
+            // Add to history
+            const historyEntry = {
+                plate: query,
+                timestamp: new Date().toLocaleString('es-AR'),
+                found: !!foundRecord,
+                owner: foundRecord ? foundRecord.owner : 'No registrado'
+            };
+            historyLogs.unshift(historyEntry);
+            saveHistoryToStorage();
+
+            const container = document.getElementById('search-result-container');
+            container.classList.remove('hidden');
+
+            if (foundRecord) {
+                renderResultCard(foundRecord);
+                showMapForAddress(foundRecord);
+            } else {
+                renderNotFoundCard(query);
+                document.getElementById('map-section').classList.add('hidden');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('plate-input').value = "";
+            document.getElementById('search-result-container').classList.add('hidden');
+            document.getElementById('map-section').classList.add('hidden');
+        }
+
+        function renderResultCard(record) {
+            let statusBadge = '';
+            let statusBorder = '';
+
+            switch(record.status) {
+                case 'ok':
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-300 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> HABILITADO / AL DÍA</span>`;
+                    statusBorder = 'border-l-8 border-l-emerald-500';
+                    break;
+                case 'debt':
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold border border-amber-300 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> CON DEUDA PENDIENTE</span>`;
+                    statusBorder = 'border-l-8 border-l-amber-500';
+                    break;
+                case 'vtv_expired':
+                    statusBadge = `<span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold border border-orange-300 flex items-center gap-1"><i class="fa-solid fa-clock"></i> VTV / RTO VENCIDA</span>`;
+                    statusBorder = 'border-l-8 border-l-orange-500';
+                    break;
+                case 'alert':
+                    statusBadge = `<span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold border border-red-300 flex items-center gap-1 animate-pulse"><i class="fa-solid fa-shield-cat"></i> IMPEDIMENTO / CAPTURA</span>`;
+                    statusBorder = 'border-l-8 border-l-red-500';
+                    break;
+            }
+
+            const html = `
+                <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden ${statusBorder} transition-all">
+                    <!-- Cabecera Tarjeta -->
+                    <div class="bg-slate-50 p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center space-x-3">
+                            <!-- Matrícula Renderizada -->
+                            <div class="plate-style px-4 py-1.5 rounded text-center">
+                                <span class="text-[9px] uppercase font-bold text-white tracking-widest block -mb-1">ARGENTINA</span>
+                                <span class="text-2xl font-extrabold font-mono text-slate-900 tracking-wider">${record.plate}</span>
+                            </div>
+                        </div>
+                        <div>
+                            ${statusBadge}
+                        </div>
+                    </div>
+
+                    <!-- Cuerpo de Datos -->
+                    <div class="p-5 space-y-4">
+                        <!-- TITULAR -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Titular Registrado</span>
+                                <span class="font-bold text-slate-800 text-base flex items-center gap-1.5 mt-0.5">
+                                    <i class="fa-solid fa-user text-navy-800"></i> ${record.owner}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">DNI / CUIT</span>
+                                <span class="font-semibold text-slate-700 text-sm mt-0.5 block">
+                                    ${record.dni}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- DOMICILIO COMPLETO -->
+                        <div class="space-y-2">
+                            <span class="text-xs font-extrabold text-navy-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-house-chimney text-indigo-600"></i> Domicilio Legal Registrado
+                            </span>
+                            <div class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="sm:col-span-2">
+                                    <span class="text-xs text-slate-500 font-medium block">Calle y Número:</span>
+                                    <span class="font-extrabold text-slate-800 text-base">${record.street} N° ${record.number}</span>
+                                    ${record.neighborhood ? `<span class="text-xs text-slate-600 block mt-0.5">Barrio: ${record.neighborhood}</span>` : ''}
+                                </div>
+                                <div>
+                                    <span class="text-xs text-slate-500 font-medium block">Localidad y Provincia:</span>
+                                    <span class="font-bold text-slate-800 text-sm block">${record.city}, ${record.province}</span>
+                                    <span class="text-xs text-slate-500">CP: ${record.cp || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OBSERVACIONES -->
+                        ${record.notes ? `
+                            <div class="p-3 bg-slate-100 rounded-xl border border-slate-200">
+                                <span class="text-xs font-bold text-slate-500 uppercase block mb-1">Notas del Inspector:</span>
+                                <p class="text-xs text-slate-700 italic">${record.notes}</p>
+                            </div>
+                        ` : ''}
+
+                        <!-- BOTONES DE ACCIÓN RÁPIDA -->
+                        <div class="flex justify-end gap-2 pt-2">
+                            <button onclick="editVehicleFromSearch('${record.plate}')" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i class="fa-solid fa-pen-to-square"></i> Editar Registro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('search-result-container').innerHTML = html;
+        }
+
+        function renderNotFoundCard(plate) {
+            const html = `
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-red-200 text-center space-y-4">
+                    <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto text-2xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Patente Sin Registrar</h3>
+                        <p class="text-xs text-slate-500 mt-1">El dominio <span class="font-mono font-bold text-slate-800">${plate}</span> no existe en la base de datos local del inspector.</p>
+                    </div>
+                    <div class="pt-2">
+                        <button onclick="openVehicleModal('${plate}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md transition-all flex items-center justify-center gap-2 mx-auto">
+                            <i class="fa-solid fa-plus"></i> Registrar Carga Inmediata
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('search-result-container').innerHTML = html;
+        }
+
+        // ==================== MAP INTEGRATION (LEAFLET) ====================
+        function showMapForAddress(record) {
+            const mapSection = document.getElementById('map-section');
+            mapSection.classList.remove('hidden');
+
+            document.getElementById('map-address-label').innerText = `${record.street} ${record.number}, ${record.city}`;
+
+            // Coordenadas predeterminadas (Córdoba Argentina si no tiene lat/lng específicas)
+            const lat = record.lat || -31.4135;
+            const lng = record.lng || -64.1810;
+
+            setTimeout(() => {
+                if (!mapInstance) {
+                    mapInstance = L.map('leaflet-map').setView([lat, lng], 14);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap'
+                    }).addTo(mapInstance);
+                } else {
+                    mapInstance.setView([lat, lng], 14);
+                }
+
+                if (mapMarker) {
+                    mapInstance.removeLayer(mapMarker);
+                }
+
+                mapMarker = L.marker([lat, lng]).addTo(mapInstance)
+                    .bindPopup(`<b>${record.owner}</b><br>${record.street} ${record.number}`)
+                    .openPopup();
+
+                mapInstance.invalidateSize();
+            }, 200);
+        }
+
+        // ==================== OCR Y CÁMARA SIMULADA ====================
+        function triggerCamera() {
+            document.getElementById('camera-file-input').click();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const modal = document.getElementById('ocr-modal');
+            const previewImg = document.getElementById('ocr-preview-img');
+            const placeholder = document.getElementById('ocr-placeholder-box');
+            const statusTitle = document.getElementById('ocr-status-title');
+            const detectedText = document.getElementById('ocr-detected-text');
+            const confirmBtn = document.getElementById('ocr-confirm-btn');
+            const spinner = document.getElementById('ocr-spinner');
+
+            // Reset modal state
+            modal.classList.remove('hidden');
+            previewImg.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            statusTitle.innerText = "Procesando Imagen...";
+            detectedText.innerText = "Escanear matrícula...";
+            confirmBtn.disabled = true;
+            spinner.classList.add('animate-spin');
+
+            // Cargar imagen en preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            // Simular lectura OCR inteligente con retraso
+            setTimeout(() => {
+                // Generar o seleccionar patente simulada para la prueba
+                const existingPlates = database.map(d => d.plate);
+                const randomExisting = existingPlates[Math.floor(Math.random() * existingPlates.length)];
+                
+                // 70% de probabilidad de detectar una existente, 30% nueva
+                if (Math.random() > 0.3) {
+                    detectedOcrPlate = randomExisting;
+                } else {
+                    detectedOcrPlate = "AD" + Math.floor(100 + Math.random() * 900) + "OP";
+                }
+
+                statusTitle.innerText = "¡Texto Detectado con Éxito!";
+                statusTitle.classList.add('text-emerald-600');
+                detectedText.innerText = `Patente: ${detectedOcrPlate}`;
+                confirmBtn.disabled = false;
+                spinner.classList.remove('animate-spin');
+            }, 2200);
+        }
+
+        function closeOcrModal() {
+            document.getElementById('ocr-modal').classList.add('hidden');
+        }
+
+        function confirmOcrResult() {
+            closeOcrModal();
+            searchPlate(detectedOcrPlate);
+        }
+
+        // ==================== GESTIÓN DE BASE DE DATOS (CRUD) ====================
+        function renderDatabaseList(filter = '') {
+            const container = document.getElementById('db-list-container');
+            const counter = document.getElementById('db-counter');
+
+            const filtered = database.filter(item => 
+                item.plate.toLowerCase().includes(filter.toLowerCase()) || 
+                item.owner.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            counter.innerText = `${filtered.length} Registros`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
+                        <p>No se encontraron patentes cargadas.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => `
+                <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-all">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-mono font-extrabold text-navy-900 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-sm">${item.plate}</span>
+                            <span class="text-xs font-bold ${getStatusColorClass(item.status)}">• ${getStatusLabel(item.status)}</span>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-700">${item.owner} <span class="text-slate-400 font-normal">(${item.dni})</span></p>
+                        <p class="text-[11px] text-slate-500"><i class="fa-solid fa-location-dot text-slate-400"></i> ${item.street} ${item.number}, ${item.city}</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="searchPlate('${item.plate}'); switchTab('search');" title="Consultar" class="p-2 text-navy-800 hover:bg-slate-200 rounded-lg text-sm">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button onclick="editVehicleFromSearch('${item.plate}')" title="Editar" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteVehicle('${item.plate}')" title="Eliminar" class="p-2 text-red-500 hover:bg-red-50 rounded-lg text-sm">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterDatabase() {
+            const query = document.getElementById('db-search-input').value;
+            renderDatabaseList(query);
+        }
+
+        function getStatusColorClass(status) {
+            switch(status) {
+                case 'ok': return 'text-emerald-600';
+                case 'debt': return 'text-amber-600';
+                case 'vtv_expired': return 'text-orange-600';
+                case 'alert': return 'text-red-600';
+                default: return 'text-slate-500';
+            }
+        }
+
+        function getStatusLabel(status) {
+            switch(status) {
+                case 'ok': return 'Al día';
+                case 'debt': return 'Con Deuda';
+                case 'vtv_expired': return 'VTV Vencida';
+                case 'alert': return 'Captura';
+                default: return 'Desconocido';
+            }
+        }
+
+        // ==================== MODAL VEHÍCULO CREAR/EDITAR ====================
+        function openVehicleModal(presetPlate = '') {
+            document.getElementById('vehicle-form').reset();
+            document.getElementById('form-original-plate').value = "";
+            document.getElementById('modal-vehicle-title').innerText = "Registrar Nuevo Vehículo";
+
+            if (presetPlate) {
+                document.getElementById('form-plate').value = presetPlate.toUpperCase();
+            }
+
+            document.getElementById('vehicle-modal').classList.remove('hidden');
+        }
+
+        function editVehicleFromSearch(plate) {
+            const record = database.find(item => item.plate === plate);
+            if (!record) return;
+
+            document.getElementById('modal-vehicle-title').innerText = "Editar Registro de Vehículo";
+            document.getElementById('form-original-plate').value = record.plate;
+
+            document.getElementById('form-plate').value = record.plate;
+            document.getElementById('form-owner').value = record.owner;
+            document.getElementById('form-dni').value = record.dni;
+            document.getElementById('form-status').value = record.status;
+
+            document.getElementById('form-street').value = record.street;
+            document.getElementById('form-number').value = record.number;
+            document.getElementById('form-neighborhood').value = record.neighborhood || '';
+            document.getElementById('form-city').value = record.city;
+            document.getElementById('form-province').value = record.province;
+            document.getElementById('form-cp').value = record.cp || '';
+
+            document.getElementById('form-lat').value = record.lat || '';
+            document.getElementById('form-lng').value = record.lng || '';
+            document.getElementById('form-notes').value = record.notes || '';
+
+            document.getElementById('vehicle-modal').classList.remove('hidden');
+        }
+
+        function closeVehicleModal() {
+            document.getElementById('vehicle-modal').classList.add('hidden');
+        }
+
+        function saveVehicleForm(event) {
+            event.preventDefault();
+
+            const originalPlate = document.getElementById('form-original-plate').value;
+            const newPlate = document.getElementById('form-plate').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            const vehicleData = {
+                plate: newPlate,
+                owner: document.getElementById('form-owner').value.trim(),
+                dni: document.getElementById('form-dni').value.trim(),
+                status: document.getElementById('form-status').value,
+                street: document.getElementById('form-street').value.trim(),
+                number: document.getElementById('form-number').value.trim(),
+                neighborhood: document.getElementById('form-neighborhood').value.trim(),
+                city: document.getElementById('form-city').value.trim(),
+                province: document.getElementById('form-province').value.trim(),
+                cp: document.getElementById('form-cp').value.trim(),
+                lat: parseFloat(document.getElementById('form-lat').value) || -31.4135,
+                lng: parseFloat(document.getElementById('form-lng').value) || -64.1810,
+                notes: document.getElementById('form-notes').value.trim()
+            };
+
+            if (originalPlate) {
+                // Editar existente
+                const index = database.findIndex(item => item.plate === originalPlate);
+                if (index !== -1) {
+                    database[index] = vehicleData;
+                }
+            } else {
+                // Agregar nuevo
+                database.push(vehicleData);
+            }
+
+            saveDbToStorage();
+            closeVehicleModal();
+
+            // Si está en la pestaña de búsqueda, refrescar consulta
+            searchPlate(newPlate);
+            switchTab('search');
+        }
+
+        function deleteVehicle(plate) {
+            if (confirm(`¿Está seguro de eliminar el registro de la patente ${plate}?`)) {
+                database = database.filter(item => item.plate !== plate);
+                saveDbToStorage();
+            }
+        }
+
+        // ==================== HISTORIAL DE CONSULTAS ====================
+        function renderHistoryList() {
+            const container = document.getElementById('history-list-container');
+
+            if (historyLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-clock text-3xl mb-2"></i>
+                        <p>No se han realizado consultas en esta sesión.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = historyLogs.map(log => `
+                <div class="p-3.5 flex items-center justify-between hover:bg-slate-50 transition-all">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full ${log.found ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'} flex items-center justify-center font-bold text-xs">
+                            <i class="fa-solid ${log.found ? 'fa-check' : 'fa-xmark'}"></i>
+                        </div>
+                        <div>
+                            <span class="font-mono font-bold text-slate-800 text-sm block">${log.plate}</span>
+                            <span class="text-xs text-slate-500 block">${log.owner}</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[11px] text-slate-400 block">${log.timestamp}</span>
+                        <button onclick="searchPlate('${log.plate}'); switchTab('search');" class="text-xs font-bold text-navy-800 hover:underline">Revisar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() {
+            if (confirm("¿Desea vaciar el historial de consultas?")) {
+                historyLogs = [];
+                saveHistoryToStorage();
+            }
+        }
+    </script>
+</body>
+</html>
