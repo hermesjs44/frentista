@@ -1399,5 +1399,38 @@
                 .replace(/'/g, "&#039;");
         }
     </script>
+<!-- Script para sugerir/instalar como acceso directo PWA -->
+<script>
+    let deferredPrompt;
+
+    // Registrar Service Worker básico (requerido para PWA)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker registrado:', reg.scope))
+            .catch(err => console.log('Error al registrar Service Worker:', err));
+    }
+
+    // Capturar el evento de instalación del navegador
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevenir que el navegador muestre su banner predeterminado inmediatamente
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Preguntar al usuario mediante una confirmación
+        setTimeout(() => {
+            if (confirm("¿Deseas instalar esta aplicación como un acceso directo en tu dispositivo?")) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('El usuario aceptó la instalación');
+                    } else {
+                        console.log('El usuario rechazó la instalación');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }, 1000); // Espera 1 segundo tras abrir la página
+    });
+</script>
 </body>
 </html>
