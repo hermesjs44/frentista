@@ -1,0 +1,22 @@
+{
+  "name": "Sistema de Gestión de Frentistas",
+  "short_name": "Frentistas",
+  "description": "Sistema de Gestión de Permisos de Libre Estacionamiento Garaje",
+  "start_url": "./index_2.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0c4a6e",
+  "icons": [
+    {
+      "src": "icon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ]
+}
