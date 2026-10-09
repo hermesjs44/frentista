@@ -3,7 +3,7 @@
   "name": "Sistema de Gestión de Frentistas",
   "icons": [
     {
-      "src": ./logoh.jpg",
+      "src": "./logoh.jpg",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
