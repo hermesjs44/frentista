@@ -1400,65 +1400,46 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-    </script>
-<!-- Script para sugerir/instalar como acceso directo PWA -->
+<!-- Script PWA optimizado para instalación en móviles -->
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker registrado:', reg.scope))
-        .catch(err => console.error('Error al registrar Service Worker:', err));
-    });
-  }
-    // Capturar el evento de instalación del navegador
+    let deferredPrompt;
+
+    // 1. Registro del Service Worker con el scope adecuado para GitHub Pages
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
+                .then((reg) => console.log('Service Worker registrado correctamente:', reg.scope))
+                .catch((err) => console.error('Error al registrar Service Worker:', err));
+        });
+    }
+
+    // 2. Captura del evento de instalación
     window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevenir que el navegador muestre su banner predeterminado inmediatamente
+        // Previene la barra automática nativa
         e.preventDefault();
         deferredPrompt = e;
 
-        // Preguntar al usuario mediante una confirmación
+        // Pregunta al usuario de manera limpia tras 1 segundo
         setTimeout(() => {
-            if (confirm("¿Deseas instalar esta aplicación como un acceso directo en tu dispositivo?")) {
+            if (deferredPrompt && confirm("¿Deseas instalar esta aplicación en tu dispositivo?")) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('El usuario aceptó la instalación');
+                        console.log('El usuario aceptó instalar la PWA');
                     } else {
-                        console.log('El usuario rechazó la instalación');
+                        console.log('El usuario canceló la instalación');
                     }
                     deferredPrompt = null;
                 });
             }
-        }, 1000); // Espera 1 segundo tras abrir la página
+        }, 1000);
     });
 
-    let deferredPrompt;
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
-        });
-    }
-
-    // Capturar la oportunidad de instalación cuando abre la página
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Desplegar el mensaje de instalación inmediatamente al cargar
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            deferredPrompt = null;
-        });
+    // 3. Detectar si la app ya fue instalada
+    window.addEventListener('appinstalled', () => {
+        console.log('Aplicación instalada exitosamente');
+        deferredPrompt = null;
     });
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { scope: '/frentista/' })
-        .then((reg) => console.log('Service Worker registrado:', reg.scope))
-        .catch((err) => console.error('Error al registrar Service Worker:', err));
-    });
-  }
 </script>
 </body>
 </html>
