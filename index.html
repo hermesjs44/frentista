@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+	<link rel="manifest" href="manifest.json">
+	<meta name="theme-color" content="#0f3750">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Frentistas - Libre Estacionamiento</title>
@@ -1430,6 +1432,26 @@
                 });
             }
         }, 1000); // Espera 1 segundo tras abrir la página
+    });
+<script>
+    let deferredPrompt;
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js');
+        });
+    }
+
+    // Capturar la oportunidad de instalación cuando abre la página
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Desplegar el mensaje de instalación inmediatamente al cargar
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            deferredPrompt = null;
+        });
     });
 </script>
 </body>
