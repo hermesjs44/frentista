@@ -1,35 +1,21 @@
 {
   "short_name": "Frentistas",
   "name": "Sistema de Gestión de Frentistas",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
-  "orientation": "portrait",
   "icons": [
     {
-      "src": "../logoh.jpg",
-      "sizes": "192x192",
-      "type": "image/jpg"
-      "purpose": "any"
+      "src": "logoh.jpg",
+      "type": "image/jpg",
+      "sizes": "192x192"
     },
     {
-      "src": "../logof.jpg",
-      "sizes": "512x512",
-      "type": "image/jpg"
-      "purpose": "maskable"
-        },
-    {
-      "src": "icono-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icono-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "logoi.jpg",
+      "type": "image/jpg",
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "start_url": "/frentista/",
+  "scope": "/frentista/",
+  "background_color": "#0f3750",
+  "theme_color": "#0f3750",
+  "display": "standalone"
 }
