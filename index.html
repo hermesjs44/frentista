@@ -1417,5 +1417,46 @@
             }, 1000);
         });
     </script>
+<!-- Script PWA optimizado para instalación en móviles -->
+<script>
+    let deferredPrompt;
+
+    // 1. Registro del Service Worker con el scope adecuado para GitHub Pages
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
+                .then((reg) => console.log('Service Worker registrado correctamente:', reg.scope))
+                .catch((err) => console.error('Error al registrar Service Worker:', err));
+        });
+    }
+
+    // 2. Captura del evento de instalación
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Previene la barra automática nativa
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Pregunta al usuario de manera limpia tras 1 segundo
+        setTimeout(() => {
+            if (deferredPrompt && confirm("¿Deseas instalar esta aplicación en tu dispositivo?")) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('El usuario aceptó instalar la PWA');
+                    } else {
+                        console.log('El usuario canceló la instalación');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }, 1000);
+    });
+
+    // 3. Detectar si la app ya fue instalada
+    window.addEventListener('appinstalled', () => {
+        console.log('Aplicación instalada exitosamente');
+        deferredPrompt = null;
+    });
+</script>
 </body>
 </html>
