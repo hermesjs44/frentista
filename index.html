@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-	<link rel="manifest" href="manifest.json">
-	<meta name="theme-color" content="#0f3750">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f3750">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Frentistas - Libre Estacionamiento</title>
@@ -44,7 +44,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- MODAL / PANTALLA DE LOGIN (Oculto por defecto con clase "hidden") -->
+    <!-- MODAL / PANTALLA DE LOGIN -->
     <div id="login-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100">
             <div class="text-center mb-6">
@@ -97,7 +97,6 @@
                 <span id="user-badge" class="bg-brand-800 text-amber-300 border border-brand-700 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                     <i class="fa-solid fa-user-shield"></i> <span id="current-user-role">-</span>
                 </span>
-                <!-- Exportar CSV restringido únicamente al Diseñador -->
                 <button id="btn-export-csv" onclick="exportToCSV()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm px-3 py-2 rounded-lg transition flex items-center gap-2 border border-slate-700">
                     <i class="fa-solid fa-file-excel text-emerald-400"></i> Exportar CSV
                 </button>
@@ -130,11 +129,10 @@
 
             <!-- Resultado de la Búsqueda -->
             <div id="inspector-result" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-md">
-                <!-- Se completa dinámicamente -->
             </div>
         </section>
 
-        <!-- PANEL DE ADMINISTRACIÓN DE USUARIOS (SÓLO DISEÑADOR) -->
+        <!-- PANEL DE ADMINISTRACIÓN DE USUARIOS -->
         <section id="view-designer-users" class="hidden mb-6 bg-slate-800 text-white p-5 rounded-2xl border border-slate-700 shadow-md no-print">
             <div class="flex items-center justify-between mb-3 border-b border-slate-700 pb-2">
                 <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2">
@@ -160,9 +158,8 @@
             </div>
         </section>
 
-        <!-- CONTENIDO GENERAL (ADMIN / DISEÑADOR) -->
+        <!-- CONTENIDO GENERAL -->
         <div id="admin-content" class="space-y-6">
-            <!-- Pestañas de Navegación -->
             <div class="flex border-b border-slate-200 mb-6 no-print bg-white rounded-t-xl px-4 pt-2 shadow-sm">
                 <button id="tab-list-btn" onclick="switchTab('list')" class="tab-active py-3 px-6 text-sm flex items-center gap-2 transition">
                     <i class="fa-solid fa-list-check"></i> Listado de Frentistas
@@ -173,7 +170,7 @@
                 </button>
             </div>
 
-            <!-- Tarjetas Resumen/Estadísticas Rápidas -->
+            <!-- Tarjetas Resumen -->
             <div id="quick-stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 no-print">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
@@ -215,7 +212,6 @@
 
             <!-- VISTA LISTADO DE FRENTISTAS -->
             <section id="view-list" class="space-y-4">
-                <!-- Barra de Búsqueda y Filtros -->
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-center no-print">
                     <div class="relative w-full md:w-96">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -241,7 +237,6 @@
                     </div>
                 </div>
 
-                <!-- Tabla de Registros -->
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm text-slate-600">
@@ -258,7 +253,6 @@
                                 </tr>
                             </thead>
                             <tbody id="records-table-body" class="divide-y divide-slate-100">
-                                <!-- Carga dinámica -->
                             </tbody>
                         </table>
                     </div>
@@ -272,12 +266,11 @@
                 </div>
             </section>
 
-            <!-- VISTA FORMULARIO DE REGISTRO / EDICIÓN -->
+            <!-- VISTA FORMULARIO -->
             <section id="view-form" class="hidden">
                 <form id="frentista-form" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-8">
                     <input type="hidden" id="form-id">
 
-                    <!-- Encabezado del Formulario -->
                     <div class="flex justify-between items-center border-b border-slate-200 pb-4">
                         <div>
                             <h2 id="form-title" class="text-lg font-bold text-slate-800">Nuevo Registro de Frentista</h2>
@@ -288,7 +281,7 @@
                         </span>
                     </div>
 
-                    <!-- SECCIÓN 1: DATOS DEL TRÁMITE Y FRENTISTA -->
+                    <!-- SECCIÓN 1: DATOS DEL TRÁMITE -->
                     <div class="space-y-4">
                         <h3 class="text-sm font-semibold text-brand-700 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
                             <i class="fa-solid fa-user-gear"></i> 1. Datos del Trámite y Frentista Principal
@@ -315,7 +308,7 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Calidad del Habitante (Max 12 dígitos) *</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Calidad del Habitante *</label>
                                 <select id="calidadHabitante" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white">
                                     <option value="Propietario">Propietario</option>
                                     <option value="Inquilino">Inquilino</option>
@@ -332,7 +325,7 @@
                         </div>
                     </div>
 
-                    <!-- SECCIÓN 2: DOCUMENTACIÓN ADJUNTA -->
+                    <!-- SECCIÓN 2: DOCUMENTACIÓN -->
                     <div class="space-y-4">
                         <h3 class="text-sm font-semibold text-brand-700 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
                             <i class="fa-solid fa-file-lines"></i> 2. Documentación Presentada
@@ -367,7 +360,7 @@
                         </div>
                     </div>
 
-                    <!-- SECCIÓN 3: FAMILIAR AUTORIZADO / CONVIVIENTE -->
+                    <!-- SECCIÓN 3: FAMILIAR AUTORIZADO -->
                     <div class="space-y-4">
                         <h3 class="text-sm font-semibold text-brand-700 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
                             <i class="fa-solid fa-users"></i> 3. Familiar Autorizado / Conviviente (Opcional)
@@ -393,7 +386,7 @@
                         </div>
                     </div>
 
-                    <!-- SECCIÓN 4: VEHÍCULOS REGISTRADOS Y ESTADO DE TRÁMITE -->
+                    <!-- SECCIÓN 4: VEHÍCULOS -->
                     <div class="space-y-4">
                         <div class="flex justify-between items-center border-b pb-2">
                             <h3 class="text-sm font-semibold text-brand-700 uppercase tracking-wider flex items-center gap-2">
@@ -404,9 +397,7 @@
                             </button>
                         </div>
 
-                        <!-- Lista Dinámica de Vehículos -->
                         <div id="vehiculos-container" class="space-y-4">
-                            <!-- Se insertan campos dinámicamente -->
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
@@ -436,7 +427,7 @@
                         </div>
                     </div>
 
-                    <!-- Botones del Formulario -->
+                    <!-- Botones -->
                     <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
                         <button type="button" onclick="switchTab('list')" class="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-medium text-sm transition">Cancelar</button>
                         <button type="submit" class="px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm shadow-sm transition flex items-center gap-2">
@@ -591,7 +582,6 @@
             const formId = document.getElementById('form-id').value;
             let existingRecord = formId ? window.frentistas.find(f => f.id === formId) : null;
 
-            // Procesar lista de vehículos
             const vehicleRows = document.querySelectorAll('.vehiculo-item');
             const vehiculos = [];
 
@@ -626,14 +616,12 @@
                 return;
             }
 
-            // Normalización final del teléfono con prefijo +549
             let rawPhone = document.getElementById('telefono').value.replace(/[^0-9]/g, '');
             if (rawPhone && !rawPhone.startsWith('549')) {
                 rawPhone = '549' + rawPhone;
             }
             const formattedPhone = rawPhone ? '+' + rawPhone : '';
 
-            // Fotos individuales de documentación general
             const fotoFrenteFile = document.getElementById('fotoFrente').files[0];
             const fotoEscrituraFile = document.getElementById('fotoEscritura').files[0];
             const fotoImpuestoFile = document.getElementById('fotoImpuesto').files[0];
@@ -657,7 +645,6 @@
                     familiarDni: document.getElementById('familiarDni').value.trim().slice(0, 14),
                     familiarRelacion: document.getElementById('familiarRelacion').value.trim(),
 
-                    // Lista de vehículos
                     vehiculos: vehiculos,
                     patente: vehiculos[0].patente,
 
@@ -713,7 +700,6 @@
 
     <!-- UI & Auth Logic -->
     <script>
-        // Configuración por defecto de credenciales
         const userPasswords = {
             inspector: localStorage.getItem('pass_inspector') || 'inspector123',
             administrador: localStorage.getItem('pass_administrador') || 'admin123',
@@ -726,7 +712,6 @@
             document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0];
             updatePasswordDisplays();
 
-            // Inicio automático con rol inspector
             currentRole = 'inspector';
             document.getElementById('current-user-role').textContent = 'INSPECTOR';
             applyRolePermissions();
@@ -792,14 +777,12 @@
                 inspectorView.classList.add('hidden');
                 designerUsersView.classList.add('hidden');
                 adminContent.classList.remove('hidden');
-                // Administrador no puede exportar CSV
                 if (exportBtn) exportBtn.classList.add('hidden');
                 renderTable();
             } else if (currentRole === 'diseñador') {
                 inspectorView.classList.add('hidden');
                 designerUsersView.classList.remove('hidden');
                 adminContent.classList.remove('hidden');
-                // Solo el diseñador puede exportar
                 if (exportBtn) exportBtn.classList.remove('hidden');
                 renderTable();
             }
@@ -824,7 +807,6 @@
                 return;
             }
 
-            // Buscar en el listado
             let foundRecord = null;
             let matchedVehicle = null;
 
@@ -1114,7 +1096,6 @@
             document.getElementById('nombreCompleto').value = record.nombreCompleto || '';
             document.getElementById('dni').value = (record.dni || '').slice(0, 14);
 
-            // Cargar número telefónico eliminando prefijo inicial para el input
             let cleanTel = (record.telefono || '').replace(/[^0-9]/g, '');
             if (cleanTel.startsWith('549')) cleanTel = cleanTel.substring(3);
             document.getElementById('telefono').value = cleanTel;
@@ -1296,7 +1277,6 @@
         }
 
         function exportToCSV() {
-            // Solo ejecutable por Diseñador
             if (currentRole !== 'diseñador') {
                 alert("No tiene permisos para exportar información.");
                 return;
@@ -1400,46 +1380,42 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-<!-- Script PWA optimizado para instalación en móviles -->
-<script>
-    let deferredPrompt;
+    </script>
 
-    // 1. Registro del Service Worker con el scope adecuado para GitHub Pages
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js', { scope: './' })
-                .then((reg) => console.log('Service Worker registrado correctamente:', reg.scope))
-                .catch((err) => console.error('Error al registrar Service Worker:', err));
+    <!-- Script PWA Unificado / Service Worker -->
+    <script>
+        let deferredPrompt = null;
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/frentista/sw.js', { scope: '/frentista/' })
+                    .then((reg) => {
+                        console.log('Service Worker registrado correctamente en el scope:', reg.scope);
+                    })
+                    .catch((err) => {
+                        console.error('Error al registrar Service Worker:', err);
+                    });
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            setTimeout(() => {
+                if (deferredPrompt && confirm("¿Deseas instalar esta aplicación en tu dispositivo?")) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('El usuario aceptó la instalación');
+                        } else {
+                            console.log('El usuario canceló la instalación');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            }, 1000);
         });
-    }
-
-    // 2. Captura del evento de instalación
-    window.addEventListener('beforeinstallprompt', (e) => {
-        // Previene la barra automática nativa
-        e.preventDefault();
-        deferredPrompt = e;
-
-        // Pregunta al usuario de manera limpia tras 1 segundo
-        setTimeout(() => {
-            if (deferredPrompt && confirm("¿Deseas instalar esta aplicación en tu dispositivo?")) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('El usuario aceptó instalar la PWA');
-                    } else {
-                        console.log('El usuario canceló la instalación');
-                    }
-                    deferredPrompt = null;
-                });
-            }
-        }, 1000);
-    });
-
-    // 3. Detectar si la app ya fue instalada
-    window.addEventListener('appinstalled', () => {
-        console.log('Aplicación instalada exitosamente');
-        deferredPrompt = null;
-    });
-</script>
+    </script>
 </body>
 </html>
