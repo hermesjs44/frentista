@@ -3,13 +3,13 @@
   "name": "Sistema de Gestión de Frentistas",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3005/3005358.png",
+      "src": "https://github.com/hermesjs44/frentista/blob/main/logoh.jpg",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3005/3005358.png",
+      "src": "https://github.com/hermesjs44/frentista/blob/main/logoi.jpg",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
