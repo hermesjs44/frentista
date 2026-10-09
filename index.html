@@ -1403,15 +1403,13 @@
     </script>
 <!-- Script para sugerir/instalar como acceso directo PWA -->
 <script>
-    let deferredPrompt;
-
-    // Registrar Service Worker básico (requerido para PWA)
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker registrado:', reg.scope))
-            .catch(err => console.log('Error al registrar Service Worker:', err));
-    }
-
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registrado:', reg.scope))
+        .catch(err => console.error('Error al registrar Service Worker:', err));
+    });
+  }
     // Capturar el evento de instalación del navegador
     window.addEventListener('beforeinstallprompt', (e) => {
         // Prevenir que el navegador muestre su banner predeterminado inmediatamente
