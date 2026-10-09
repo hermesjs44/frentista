@@ -1431,7 +1431,7 @@
             }
         }, 1000); // Espera 1 segundo tras abrir la página
     });
-<script>
+
     let deferredPrompt;
 
     if ('serviceWorker' in navigator) {
@@ -1451,6 +1451,14 @@
             deferredPrompt = null;
         });
     });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', { scope: '/frentista/' })
+        .then((reg) => console.log('Service Worker registrado:', reg.scope))
+        .catch((err) => console.error('Error al registrar Service Worker:', err));
+    });
+  }
 </script>
 </body>
 </html>
