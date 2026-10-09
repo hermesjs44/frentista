@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-	<link rel="manifest" href="manifest.json">
-	<meta name="theme-color" content="#0f3750">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Frentistas - Libre Estacionamiento</title>
@@ -1400,45 +1398,38 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-<!-- Script PWA optimizado para instalación en móviles -->
+    </script>
+<!-- Script para sugerir/instalar como acceso directo PWA -->
 <script>
     let deferredPrompt;
 
-    // 1. Registro del Service Worker con el scope adecuado para GitHub Pages
+    // Registrar Service Worker básico (requerido para PWA)
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js', { scope: './' })
-                .then((reg) => console.log('Service Worker registrado correctamente:', reg.scope))
-                .catch((err) => console.error('Error al registrar Service Worker:', err));
-        });
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker registrado:', reg.scope))
+            .catch(err => console.log('Error al registrar Service Worker:', err));
     }
 
-    // 2. Captura del evento de instalación
+    // Capturar el evento de instalación del navegador
     window.addEventListener('beforeinstallprompt', (e) => {
-        // Previene la barra automática nativa
+        // Prevenir que el navegador muestre su banner predeterminado inmediatamente
         e.preventDefault();
         deferredPrompt = e;
 
-        // Pregunta al usuario de manera limpia tras 1 segundo
+        // Preguntar al usuario mediante una confirmación
         setTimeout(() => {
-            if (deferredPrompt && confirm("¿Deseas instalar esta aplicación en tu dispositivo?")) {
+            if (confirm("¿Deseas instalar esta aplicación como un acceso directo en tu dispositivo?")) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('El usuario aceptó instalar la PWA');
+                        console.log('El usuario aceptó la instalación');
                     } else {
-                        console.log('El usuario canceló la instalación');
+                        console.log('El usuario rechazó la instalación');
                     }
                     deferredPrompt = null;
                 });
             }
-        }, 1000);
-    });
-
-    // 3. Detectar si la app ya fue instalada
-    window.addEventListener('appinstalled', () => {
-        console.log('Aplicación instalada exitosamente');
-        deferredPrompt = null;
+        }, 1000); // Espera 1 segundo tras abrir la página
     });
 </script>
 </body>
