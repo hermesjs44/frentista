@@ -1,6 +1,6 @@
 {
-  "name": "Frentistas",
   "short_name": "Frentistas",
+  "name": "Sistema de Gestión de Frentistas",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
