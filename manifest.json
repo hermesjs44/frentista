@@ -3,19 +3,19 @@
   "name": "Sistema de Gestión de Frentistas",
   "icons": [
     {
-      "src": "https://hermesjs44.github.io/frentista/logoh.jpg",
+      "src": "../logoh.jpg",
       "type": "image/jpeg",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "https://hermesjs44.github.io/frentista/logof.jpg",
+      "src": "../logof.jpg",
       "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "../index.html",
   "scope": "./",
   "background_color": "#0f3750",
   "theme_color": "#0f3750",
